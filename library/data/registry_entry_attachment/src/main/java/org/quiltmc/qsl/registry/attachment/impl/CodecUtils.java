@@ -17,20 +17,36 @@
 package org.quiltmc.qsl.registry.attachment.impl;
 
 import com.mojang.serialization.Codec;
+import com.mojang.serialization.DataResult;
 import com.mojang.serialization.JsonOps;
+import org.jetbrains.annotations.Nullable;
 
 public final class CodecUtils {
 	private CodecUtils() { }
 
 	public static <T> void assertValid(Codec<T> codec, T value) {
+
+		String actualError = getErrorIfInvalid(codec, value);
+
+		if (actualError == null) {
+			return;
+		}
+
+		throw new IllegalArgumentException("Value is invalid: " + actualError);
+	}
+
+	@Nullable
+	public static <T> String getErrorIfInvalid(Codec<T> codec, T value) {
 		var encoded = codec.encodeStart(JsonOps.INSTANCE, value);
 
 		if (encoded.result().isEmpty()) {
 			if (encoded.error().isPresent()) {
-				throw new IllegalArgumentException("Value is invalid: " + encoded.error().get().message());
+				return encoded.error().get().message();
 			} else {
-				throw new IllegalArgumentException("Value is invalid: unknown error");
+				return "unknown error";
 			}
 		}
+
+		return null;
 	}
 }
